@@ -8,7 +8,8 @@
 > **Frame count: 6089** for the sample (audio frames only; samples count 7,014,528 = 6089 × 1152,
 > duration 2 min 39.059 s). Our API returns **6090** (all physical frames, per the assignment
 > wording), and the README + `/analyze` endpoint reconcile the two: 6090 physical = 6089 audio
-> + 1 Xing metadata frame.
+>
+> - 1 Xing metadata frame.
 
 **Assignment:** Foundation Health technical assessment — TypeScript API at `POST /file-upload`
 that accepts an MP3 upload and responds `{ "frameCount": <number> }` for MPEG-1 Audio Layer III.
@@ -24,19 +25,19 @@ that could be handed to another engineer or model to build without further clari
 
 Analyzed `sample (2).mp3` (1,458,172 bytes) with a throwaway parser:
 
-| Property | Value |
-|---|---|
-| Container | ID3v2.4.0 tag (34 bytes) + MPEG audio; audio starts at byte 44 |
-| Format | MPEG-1 Layer III, 44.1 kHz, stereo, **VBR** (32–160 kbps mix) |
+| Property        | Value                                                          |
+| --------------- | -------------------------------------------------------------- |
+| Container       | ID3v2.4.0 tag (34 bytes) + MPEG audio; audio starts at byte 44 |
+| Format          | MPEG-1 Layer III, 44.1 kHz, stereo, **VBR** (32–160 kbps mix)  |
 | Physical frames | **6090** (clean parse, zero resync skips, zero trailing bytes) |
-| Xing header | Present in first frame; declares **6089** frames |
-| ID3v1 trailer | None |
+| Xing header     | Present in first frame; declares **6089** frames               |
+| ID3v1 trailer   | None                                                           |
 
 The first "frame" is a Xing/Info VBR header — a structurally valid MPEG frame that carries
 metadata rather than audio. Its declared count (6089) excludes itself. This is the classic
 off-by-one in this assignment and **Decision 1** below.
 
-The file being VBR also matters: the parser must read the bitrate from *every* frame header,
+The file being VBR also matters: the parser must read the bitrate from _every_ frame header,
 not assume a constant frame length.
 
 ---
@@ -45,15 +46,15 @@ not assume a constant frame length.
 
 ### 2.1 Stack
 
-| Concern | Choice (proposed) | Why |
-|---|---|---|
-| Runtime | Node.js 22 LTS | Current LTS; native `fetch`, stable test runner ecosystem |
-| Language | TypeScript, `strict: true` | Required; strict mode shows TS competence |
-| HTTP framework | **Fastify** + `@fastify/multipart` | First-class streaming multipart, schema-based responses, typed, faster than Express, and less boilerplate than raw `http` |
-| Tests | Vitest + `fastify.inject()`/light-my-request | Fast, TS-native, no build step in test loop |
-| Lint/format | ESLint (typescript-eslint, flat config) + Prettier | The "standardised tooling" criterion |
-| CI | GitHub Actions: lint → typecheck → test → build | "Uses Git effectively" evidence |
-| Container | Multi-stage Dockerfile (distroless or alpine, non-root) | Local prod parity + feeds Part 2 |
+| Concern        | Choice (proposed)                                       | Why                                                                                                                       |
+| -------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Runtime        | Node.js 22 LTS                                          | Current LTS; native `fetch`, stable test runner ecosystem                                                                 |
+| Language       | TypeScript, `strict: true`                              | Required; strict mode shows TS competence                                                                                 |
+| HTTP framework | **Fastify** + `@fastify/multipart`                      | First-class streaming multipart, schema-based responses, typed, faster than Express, and less boilerplate than raw `http` |
+| Tests          | Vitest + `fastify.inject()`/light-my-request            | Fast, TS-native, no build step in test loop                                                                               |
+| Lint/format    | ESLint (typescript-eslint, flat config) + Prettier      | The "standardised tooling" criterion                                                                                      |
+| CI             | GitHub Actions: lint → typecheck → test → build         | "Uses Git effectively" evidence                                                                                           |
+| Container      | Multi-stage Dockerfile (distroless or alpine, non-root) | Local prod parity + feeds Part 2                                                                                          |
 
 Alternatives considered: Express (ubiquitous but weaker streaming/typing story), Hono (nice but
 multipart streaming is less mature), raw `node:http` (maximum "no magic" points, more boilerplate).
@@ -92,6 +93,7 @@ SKIPPING_FRAME_BODY → DONE`, with a small carry buffer (< 4 bytes + partial he
 boundaries falling mid-header are handled — this is a dedicated test case.
 
 **Byte-level rules (MPEG-1 Layer III only, per the brief):**
+
 - Frame sync: 11 set bits (`0xFF`, `0xE0` mask); then require version bits `11` (MPEG-1) and
   layer bits `01` (Layer III); reject bitrate index `0` (free) and `15` (bad), sample-rate index `3`.
 - Frame length = `⌊144 × bitrate / sampleRate⌋ + padding` bytes; skip exactly that far — never
@@ -104,14 +106,14 @@ boundaries falling mid-header are handled — this is a dedicated test case.
 
 ### 2.3 API behavior & error model
 
-| Case | Status | Body |
-|---|---|---|
-| Valid MP3 | 200 | `{ "frameCount": 6090 }` (`content-type: application/json; charset=utf-8`) |
-| No file part / wrong field | 400 | `{ "error": { "code": "NO_FILE", "message": "..." } }` |
-| Not an MPEG-1 Layer III file | 422 or 400 (**Decision 3**) | `{ "error": { "code": "UNSUPPORTED_FORMAT", ... } }` |
-| File exceeds size cap | 413 | `{ "error": { "code": "FILE_TOO_LARGE", ... } }` |
-| Wrong method / route | 404/405 | JSON error envelope |
-| Unexpected failure | 500 | Generic JSON error, details only in server logs |
+| Case                         | Status                      | Body                                                                       |
+| ---------------------------- | --------------------------- | -------------------------------------------------------------------------- |
+| Valid MP3                    | 200                         | `{ "frameCount": 6090 }` (`content-type: application/json; charset=utf-8`) |
+| No file part / wrong field   | 400                         | `{ "error": { "code": "NO_FILE", "message": "..." } }`                     |
+| Not an MPEG-1 Layer III file | 422 or 400 (**Decision 3**) | `{ "error": { "code": "UNSUPPORTED_FORMAT", ... } }`                       |
+| File exceeds size cap        | 413                         | `{ "error": { "code": "FILE_TOO_LARGE", ... } }`                           |
+| Wrong method / route         | 404/405                     | JSON error envelope                                                        |
+| Unexpected failure           | 500                         | Generic JSON error, details only in server logs                            |
 
 - Upload is **streamed** from the multipart part directly into the parser — no buffering the whole
   file in memory, no temp files. Scalability criterion answered by design, not by hardware.
@@ -218,27 +220,27 @@ authenticated as root, no default region). Deployment proceeds with existing cre
 
 ## 5. Decisions (RESOLVED 2026-08-14)
 
-| # | Decision | Resolution |
-|---|---|---|
-| 1 | Frame-count semantics | **All physical frames (6090)**. mediainfo verified: it reports 6089 (audio frames only); README and `/analyze` explain and reconcile both numbers. |
-| 2 | Truncated final frame | **Count it** if the full 4-byte header was valid; surface a warning in `/analyze`. |
-| 3 | Unsupported-format status code | **422** |
-| 4 | HTTP framework | **Fastify** |
-| 5 | IaC | **CDK (TypeScript)** — staying within the AWS stack |
-| 6 | Compute | **Fargate + ALB (+ CloudFront + WAF)** — cost not a constraint at this stage; standard best-practice networking (private subnets + NAT, 2 AZs) |
-| 7 | Repo strategy | **Single repo** with a clearly separated `infra/` folder |
-| 8 | Domain | **Default CloudFront URL** (documented tradeoff: no ACM cert possible on the ALB's amazon DNS name, so the CloudFront→ALB hop uses HTTP locked down by security group + secret origin header; custom domain later enables end-to-end TLS) |
-| 9 | Region | **us-east-1** |
-| 10 | *(new scope)* Front-end | **Yes** — simple single-page UI served by the same app: upload a file, see a full narrative breakdown of the analysis with frames broken down by type. The assignment's strict `POST /file-upload` contract stays untouched; rich detail lives at a separate `POST /analyze` endpoint. |
+| #   | Decision                       | Resolution                                                                                                                                                                                                                                                                             |
+| --- | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Frame-count semantics          | **All physical frames (6090)**. mediainfo verified: it reports 6089 (audio frames only); README and `/analyze` explain and reconcile both numbers.                                                                                                                                     |
+| 2   | Truncated final frame          | **Count it** if the full 4-byte header was valid; surface a warning in `/analyze`.                                                                                                                                                                                                     |
+| 3   | Unsupported-format status code | **422**                                                                                                                                                                                                                                                                                |
+| 4   | HTTP framework                 | **Fastify**                                                                                                                                                                                                                                                                            |
+| 5   | IaC                            | **CDK (TypeScript)** — staying within the AWS stack                                                                                                                                                                                                                                    |
+| 6   | Compute                        | **Fargate + ALB (+ CloudFront + WAF)** — cost not a constraint at this stage; standard best-practice networking (private subnets + NAT, 2 AZs)                                                                                                                                         |
+| 7   | Repo strategy                  | **Single repo** with a clearly separated `infra/` folder                                                                                                                                                                                                                               |
+| 8   | Domain                         | **Default CloudFront URL** (documented tradeoff: no ACM cert possible on the ALB's amazon DNS name, so the CloudFront→ALB hop uses HTTP locked down by security group + secret origin header; custom domain later enables end-to-end TLS)                                              |
+| 9   | Region                         | **us-east-1**                                                                                                                                                                                                                                                                          |
+| 10  | _(new scope)_ Front-end        | **Yes** — simple single-page UI served by the same app: upload a file, see a full narrative breakdown of the analysis with frames broken down by type. The assignment's strict `POST /file-upload` contract stays untouched; rich detail lives at a separate `POST /analyze` endpoint. |
 
 ---
 
 ## 6. Suggested timeline (5-day window)
 
-| Day | Work |
-|---|---|
-| 1 | Finalize spec from this plan; repo scaffold + tooling + CI; header decoder TDD |
-| 2 | Streaming parser complete incl. edge cases; mediainfo cross-verification |
-| 3 | HTTP layer, error model, integration tests, Dockerfile, README — **submission-ready** |
-| 4 | AWS account prep; CDK stacks; deploy; smoke + large-file test |
-| 5 | Polish, load test, docs, buffer |
+| Day | Work                                                                                  |
+| --- | ------------------------------------------------------------------------------------- |
+| 1   | Finalize spec from this plan; repo scaffold + tooling + CI; header decoder TDD        |
+| 2   | Streaming parser complete incl. edge cases; mediainfo cross-verification              |
+| 3   | HTTP layer, error model, integration tests, Dockerfile, README — **submission-ready** |
+| 4   | AWS account prep; CDK stacks; deploy; smoke + large-file test                         |
+| 5   | Polish, load test, docs, buffer                                                       |

@@ -21,24 +21,24 @@ Foundation Health assignment exactly, plus two above-and-beyond layers:
 
 ### 1.1 Locked decisions
 
-| Topic | Decision |
-|---|---|
-| Frame-count semantics | Count **every physical MPEG-1 Layer III frame**, including the Xing/Info metadata frame. Sample file ⇒ **6090**. |
-| mediainfo relationship | mediainfo (full parse) reports **6089** for the sample — audio frames only. README and `/analyze` must reconcile: 6090 physical = 6089 audio + 1 Xing frame. |
-| Truncated final frame | Counted if its full 4-byte header was valid; reported as a warning in `/analyze`. |
-| Unsupported format status | **422** |
-| HTTP framework | Fastify |
-| IaC | AWS CDK, TypeScript |
-| Compute | ECS Fargate behind ALB, fronted by CloudFront + WAF |
-| Repo | Single repo; `infra/` and `web/` folders alongside the API |
-| Domain | Default CloudFront URL (no custom domain) |
-| Region | `us-east-1` |
+| Topic                     | Decision                                                                                                                                                     |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Frame-count semantics     | Count **every physical MPEG-1 Layer III frame**, including the Xing/Info metadata frame. Sample file ⇒ **6090**.                                             |
+| mediainfo relationship    | mediainfo (full parse) reports **6089** for the sample — audio frames only. README and `/analyze` must reconcile: 6090 physical = 6089 audio + 1 Xing frame. |
+| Truncated final frame     | Counted if its full 4-byte header was valid; reported as a warning in `/analyze`.                                                                            |
+| Unsupported format status | **422**                                                                                                                                                      |
+| HTTP framework            | Fastify                                                                                                                                                      |
+| IaC                       | AWS CDK, TypeScript                                                                                                                                          |
+| Compute                   | ECS Fargate behind ALB, fronted by CloudFront + WAF                                                                                                          |
+| Repo                      | Single repo; `infra/` and `web/` folders alongside the API                                                                                                   |
+| Domain                    | Default CloudFront URL (no custom domain)                                                                                                                    |
+| Region                    | `us-east-1`                                                                                                                                                  |
 
 ### 1.2 Out of scope
 
 - MPEG-2 / MPEG-2.5, Layers I & II (detect → reject with 422; do not parse).
 - Free-format bitrate (bitrate index 0) — reject/skip, documented limitation.
-- Decoding audio, CRC verification, tag content parsing (only tag *skipping* and basic identification).
+- Decoding audio, CRC verification, tag content parsing (only tag _skipping_ and basic identification).
 - Persisting uploads anywhere (the file is never written to disk or object storage — a deliberate privacy/security property; state it in the README).
 - Authentication (public demo endpoint; abuse handled by WAF rate limiting and size caps).
 - **AWS account maintenance** (root-credential remediation, MFA, identity setup, billing
@@ -52,21 +52,21 @@ Foundation Health assignment exactly, plus two above-and-beyond layers:
 
 ### 2.1 Frame header — 4 bytes, big-endian bit layout `AAAAAAAA AAABBCCD EEEEFFGH IIJJKLMM`
 
-| Field | Bits | Meaning | Parser rule |
-|---|---|---|---|
-| A | 11 | Frame sync, all 1s | `byte0 == 0xFF && (byte1 & 0xE0) == 0xE0` |
-| B | 2 | MPEG version: `00`=2.5, `01`=reserved, `10`=2, `11`=1 | require `11` |
-| C | 2 | Layer: `00`=reserved, `01`=III, `10`=II, `11`=I | require `01` |
-| D | 1 | Protection: `0`=16-bit CRC follows header, `1`=no CRC | record for stats; affects Xing offset (§2.4) |
-| E | 4 | Bitrate index | V1L3 table below; reject `0` (free) and `15` (bad) |
-| F | 2 | Sample rate: `00`=44100, `01`=48000, `10`=32000, `11`=reserved | reject `11` |
-| G | 1 | Padding: adds 1 byte to frame length | used in length calc |
-| H | 1 | Private bit | ignore |
-| I | 2 | Channel mode: `00`=stereo, `01`=joint stereo, `10`=dual channel, `11`=mono | record for stats; affects Xing offset |
-| J | 2 | Mode extension | ignore |
-| K | 1 | Copyright | ignore (may surface in `/analyze`) |
-| L | 1 | Original | ignore (may surface in `/analyze`) |
-| M | 2 | Emphasis (`10` reserved) | do **not** reject; ignore |
+| Field | Bits | Meaning                                                                    | Parser rule                                        |
+| ----- | ---- | -------------------------------------------------------------------------- | -------------------------------------------------- |
+| A     | 11   | Frame sync, all 1s                                                         | `byte0 == 0xFF && (byte1 & 0xE0) == 0xE0`          |
+| B     | 2    | MPEG version: `00`=2.5, `01`=reserved, `10`=2, `11`=1                      | require `11`                                       |
+| C     | 2    | Layer: `00`=reserved, `01`=III, `10`=II, `11`=I                            | require `01`                                       |
+| D     | 1    | Protection: `0`=16-bit CRC follows header, `1`=no CRC                      | record for stats; affects Xing offset (§2.4)       |
+| E     | 4    | Bitrate index                                                              | V1L3 table below; reject `0` (free) and `15` (bad) |
+| F     | 2    | Sample rate: `00`=44100, `01`=48000, `10`=32000, `11`=reserved             | reject `11`                                        |
+| G     | 1    | Padding: adds 1 byte to frame length                                       | used in length calc                                |
+| H     | 1    | Private bit                                                                | ignore                                             |
+| I     | 2    | Channel mode: `00`=stereo, `01`=joint stereo, `10`=dual channel, `11`=mono | record for stats; affects Xing offset              |
+| J     | 2    | Mode extension                                                             | ignore                                             |
+| K     | 1    | Copyright                                                                  | ignore (may surface in `/analyze`)                 |
+| L     | 1    | Original                                                                   | ignore (may surface in `/analyze`)                 |
+| M     | 2    | Emphasis (`10` reserved)                                                   | do **not** reject; ignore                          |
 
 **Bitrate table (MPEG-1 Layer III), kbps by index 1–14:**
 `32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320`
@@ -78,10 +78,10 @@ frameLength = floor(144 * bitrateBps / sampleRateHz) + padding
 ```
 
 Worked example (sample file's first frame): 64 kbps, 44 100 Hz, no padding →
-`floor(144 × 64000 / 44100) = 209` bytes. Each frame carries **1152 samples**;
+`floor(144 × 64000 / 44100) = 208` bytes. Each frame carries **1152 samples**;
 at 44.1 kHz one frame spans 1152/44100 ≈ 26.122 ms.
 
-The header's 4 bytes are *included* in `frameLength`. After reading a valid header, advance
+The header's 4 bytes are _included_ in `frameLength`. After reading a valid header, advance
 exactly `frameLength` bytes from the header start to reach the next header. **Never byte-scan
 inside a frame body** — audio payload can contain false sync patterns.
 
@@ -116,28 +116,28 @@ Xing/Info/VBRI gets `vbr-header`).
 
 ### 2.5 Resync & edge policies (normative)
 
-| Situation | Policy |
-|---|---|
-| Bytes before first valid frame (after any ID3v2) | Scan forward byte-by-byte for a valid header; count skipped bytes. If EOF with 0 frames found → `UNSUPPORTED_FORMAT` error. |
-| Invalid header where next frame expected (mid-stream) | Byte-by-byte scan to next valid MPEG-1 L3 header; accumulate `resyncedBytes`; emit one `RESYNC` warning with total. |
-| Valid header, body truncated by EOF | **Count the frame**; warning `TRUNCATED_FINAL_FRAME`. |
-| 1–3 bytes of a possible header at EOF | Not counted; falls into trailing-bytes/ID3v1 handling (§2.3). |
-| MPEG-2/2.5 or Layer I/II headers | Not valid frames for this parser. If the file yields zero MPEG-1-L3 frames → `UNSUPPORTED_FORMAT`. |
-| Free bitrate (index 0) | Treated as invalid header (resync applies). |
-| Empty upload (0 bytes) | `UNSUPPORTED_FORMAT` (message: empty file). |
+| Situation                                             | Policy                                                                                                                      |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Bytes before first valid frame (after any ID3v2)      | Scan forward byte-by-byte for a valid header; count skipped bytes. If EOF with 0 frames found → `UNSUPPORTED_FORMAT` error. |
+| Invalid header where next frame expected (mid-stream) | Byte-by-byte scan to next valid MPEG-1 L3 header; accumulate `resyncedBytes`; emit one `RESYNC` warning with total.         |
+| Valid header, body truncated by EOF                   | **Count the frame**; warning `TRUNCATED_FINAL_FRAME`.                                                                       |
+| 1–3 bytes of a possible header at EOF                 | Not counted; falls into trailing-bytes/ID3v1 handling (§2.3).                                                               |
+| MPEG-2/2.5 or Layer I/II headers                      | Not valid frames for this parser. If the file yields zero MPEG-1-L3 frames → `UNSUPPORTED_FORMAT`.                          |
+| Free bitrate (index 0)                                | Treated as invalid header (resync applies).                                                                                 |
+| Empty upload (0 bytes)                                | `UNSUPPORTED_FORMAT` (message: empty file).                                                                                 |
 
 ### 2.6 Ground truth — provided sample (`sample.mp3`, committed as a test fixture)
 
-| Property | Value |
-|---|---|
-| Size | 1 458 172 bytes |
-| ID3v2 | v2.4.0, flags 0, tag size 34 ⇒ audio starts at byte **44**; no ID3v1 |
-| First frame | Xing header, flags `0x0F`, declared frame count **6089** |
-| Physical frames | **6090** (zero resync bytes, zero trailing bytes) |
-| Format | MPEG-1 Layer III, 44 100 Hz, VBR |
+| Property                                          | Value                                                                        |
+| ------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Size                                              | 1 458 172 bytes                                                              |
+| ID3v2                                             | v2.4.0, flags 0, tag size 34 ⇒ audio starts at byte **44**; no ID3v1         |
+| First frame                                       | Xing header, flags `0x0F`, declared frame count **6089**                     |
+| Physical frames                                   | **6090** (zero resync bytes, zero trailing bytes)                            |
+| Format                                            | MPEG-1 Layer III, 44 100 Hz, VBR                                             |
 | Bitrate histogram (kbps→frames, incl. Xing frame) | 32→49, 40→11, 48→23, 56→102, 64→2352, 80→3374, 96→136, 112→27, 128→11, 160→5 |
-| Duration | 6089 × 1152 / 44100 = **159.059 s** (2 min 39.06 s) |
-| mediainfo (`--ParseSpeed=1 -f`) | Frame count **6089**, Samples count 7 014 528, Duration 159 059 ms |
+| Duration                                          | 6089 × 1152 / 44100 = **159.059 s** (2 min 39.06 s)                          |
+| mediainfo (`--ParseSpeed=1 -f`)                   | Frame count **6089**, Samples count 7 014 528, Duration 159 059 ms           |
 
 ---
 
@@ -211,62 +211,79 @@ Same request shape as `/file-upload`. Success **200** returns:
 
 ```jsonc
 {
-  "frameCount": 6090,                          // identical semantics to /file-upload
+  "frameCount": 6090, // identical semantics to /file-upload
   "file": { "fileName": "sample.mp3", "sizeBytes": 1458172 },
   "format": {
-    "mpegVersion": "1", "layer": "III",
+    "mpegVersion": "1",
+    "layer": "III",
     "sampleRateHz": 44100,
-    "channelMode": "joint-stereo",             // dominant mode: "stereo"|"joint-stereo"|"dual-channel"|"mono"
-    "bitRateMode": "VBR",                      // "VBR" if >1 distinct bitrate else "CBR"
-    "averageBitRateKbps": 73.3                 // (audio bytes × 8) / duration, 1 decimal
+    "channelMode": "joint-stereo", // dominant mode: "stereo"|"joint-stereo"|"dual-channel"|"mono"
+    "bitRateMode": "VBR", // "VBR" if >1 distinct bitrate else "CBR"
+    "averageBitRateKbps": 73.3, // (audio bytes × 8) / duration, 1 decimal
   },
   "tags": {
     "id3v2": { "present": true, "version": "2.4.0", "totalSizeBytes": 44 },
-    "id3v1": { "present": false }
+    "id3v1": { "present": false },
   },
   "vbrHeader": {
-    "present": true, "kind": "Xing",           // "Xing" | "Info" | "VBRI" | null kind when absent
-    "declaredFrameCount": 6089,                // null if flag absent
-    "declaredByteCount": 1458128,              // null if flag absent (value illustrative)
-    "hasToc": true, "qualityIndicator": 57     // null if absent
+    "present": true,
+    "kind": "Xing", // "Xing" | "Info" | "VBRI" | null kind when absent
+    "declaredFrameCount": 6089, // null if flag absent
+    "declaredByteCount": 1458128, // null if flag absent (value illustrative)
+    "hasToc": true,
+    "qualityIndicator": 57, // null if absent
   },
-  "frames": {                                  // "broken down by type" — feeds the UI
+  "frames": {
+    // "broken down by type" — feeds the UI
     "physicalTotal": 6090,
     "byKind": { "audio": 6089, "vbrHeader": 1 },
-    "byBitRateKbps": { "32": 49, "40": 11, "48": 23, "56": 102, "64": 2352,
-                        "80": 3374, "96": 136, "112": 27, "128": 11, "160": 5 },
+    "byBitRateKbps": {
+      "32": 49,
+      "40": 11,
+      "48": 23,
+      "56": 102,
+      "64": 2352,
+      "80": 3374,
+      "96": 136,
+      "112": 27,
+      "128": 11,
+      "160": 5,
+    },
     "bySampleRateHz": { "44100": 6090 },
     "byChannelMode": { "joint-stereo": 6090 },
-    "padded": 1234, "withCrc": 0               // counts (values illustrative)
+    "padded": 1234,
+    "withCrc": 0, // counts (values illustrative)
   },
   "timing": {
     "samplesPerFrame": 1152,
-    "totalSamples": 7014528,                   // audio frames × 1152
-    "durationSeconds": 159.059,                // audio frames × 1152 / sampleRate, 3 decimals
-    "msPerFrameAtPrimaryRate": 26.122
+    "totalSamples": 7014528, // audio frames × 1152
+    "durationSeconds": 159.059, // audio frames × 1152 / sampleRate, 3 decimals
+    "msPerFrameAtPrimaryRate": 26.122,
   },
   "layout": { "audioStartOffset": 44, "bytesParsed": 1458172, "trailingBytes": 0 },
-  "warnings": []                               // e.g. [{ "code": "RESYNC", "message": "...", "bytesSkipped": 12 }]
+  "warnings": [], // e.g. [{ "code": "RESYNC", "message": "...", "bytesSkipped": 12 }]
 }
 ```
 
 Warning codes: `RESYNC`, `TRUNCATED_FINAL_FRAME`, `TRAILING_BYTES`, `MIXED_SAMPLE_RATES`,
 `MIXED_CHANNEL_MODES`. Duration and totals use **audio frames only** (metadata frame excluded),
-matching mediainfo — say so in the README.
+matching mediainfo — say so in the README. Consistency warnings (mixed rates/modes) and the
+CBR/VBR judgment are likewise computed over audio frames only: the sample's Xing frame is
+`stereo` while its audio is `joint-stereo`, and that difference must not trigger a warning.
 
 ### 4.3 Errors (both upload endpoints) and other routes
 
 Envelope: `{ "error": { "code": string, "message": string } }` — messages human-readable,
 actionable, and free of internals/stack traces.
 
-| Status | Code | Trigger |
-|---|---|---|
-| 400 | `NO_FILE` | No file part in the multipart body (or body isn't multipart) |
-| 400 | `MULTIPLE_FILES` | More than one file part |
-| 413 | `FILE_TOO_LARGE` | Stream exceeds `MAX_UPLOAD_BYTES` (default **500 MB**, env-configurable); abort promptly mid-stream |
-| 422 | `UNSUPPORTED_FORMAT` | Zero valid MPEG-1 Layer III frames found (wrong file type, empty file, MPEG-2-only, free-format-only) |
-| 404 / 405 | `NOT_FOUND` / `METHOD_NOT_ALLOWED` | Unknown route / wrong method (Fastify defaults, JSON envelope) |
-| 500 | `INTERNAL` | Unexpected error; generic message; full details only in server logs |
+| Status    | Code                               | Trigger                                                                                               |
+| --------- | ---------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| 400       | `NO_FILE`                          | No file part in the multipart body (or body isn't multipart)                                          |
+| 400       | `MULTIPLE_FILES`                   | More than one file part                                                                               |
+| 413       | `FILE_TOO_LARGE`                   | Stream exceeds `MAX_UPLOAD_BYTES` (default **500 MB**, env-configurable); abort promptly mid-stream   |
+| 422       | `UNSUPPORTED_FORMAT`               | Zero valid MPEG-1 Layer III frames found (wrong file type, empty file, MPEG-2-only, free-format-only) |
+| 404 / 405 | `NOT_FOUND` / `METHOD_NOT_ALLOWED` | Unknown route / wrong method (Fastify defaults, JSON envelope)                                        |
+| 500       | `INTERNAL`                         | Unexpected error; generic message; full details only in server logs                                   |
 
 Other routes: `GET /healthz` → 200 `{ "status": "ok" }` (ALB target health). `GET /` and static
 assets → the built front-end via `@fastify/static` from `web/dist` (present in the Docker image;
@@ -290,8 +307,8 @@ in local dev the Vite dev server proxies `/analyze` instead).
 
 ```ts
 class Mp3FrameCounter {
-  update(chunk: Uint8Array): void;    // may be called with chunks of ANY size, including 1 byte
-  finalize(): AnalysisReport;         // throws UnsupportedFormatError if 0 frames; idempotent-safe to call once
+  update(chunk: Uint8Array): void; // may be called with chunks of ANY size, including 1 byte
+  finalize(): AnalysisReport; // throws UnsupportedFormatError if 0 frames; idempotent-safe to call once
 }
 ```
 
@@ -332,37 +349,39 @@ from these — no binary blobs in the repo except `sample.mp3`.
 **Unit — frame-header (`U-HDR`)**: decode every bitrate index (1–14 → kbps; 0 and 15 rejected);
 every sample-rate index (3 rejected); version ≠ MPEG-1 rejected (each of 2.5/reserved/2);
 layer ≠ III rejected (each); padding on/off length check at 44.1/48/32 kHz (spot values:
-64 kbps @44.1 → 209/210; 128 @48 → 384/385; 320 @32 → 1440/1441); CRC + channel-mode extraction.
+64 kbps @44.1 → 208/209; 128 @48 → 384/385; 320 @32 → 1440/1441); CRC + channel-mode extraction.
 
 **Unit — parser (`U-PRS`)**
-| ID | Input | Expect |
-|---|---|---|
-| 01 | 3 audio frames | frameCount 3, byKind.audio 3 |
-| 02 | sample bytes fed 1 byte per `update()` | identical report to single-buffer parse (6090) |
-| 03 | id3v2(500) + 5 frames | count 5, audioStartOffset 510, id3v2 reported |
-| 04 | id3v2 with footer flag + frames | footer's extra 10 bytes skipped |
-| 05 | junk(100) + 4 frames | count 4, RESYNC warning bytesSkipped 100 |
-| 06 | 3 frames + valid header + half body (EOF) | count 4, TRUNCATED_FINAL_FRAME warning |
-| 07 | empty input | finalize throws UnsupportedFormatError |
-| 08 | 2 KB of PNG bytes | UnsupportedFormatError |
-| 09 | 4 frames + id3v1() | count 4, id3v1.present true, no TRAILING_BYTES |
-| 10 | xingFrame(declared 3) + 3 audio frames | count 4, byKind {audio 3, vbrHeader 1}, declaredFrameCount 3 |
-| 11 | frames with junk between two of them | correct count + RESYNC |
-| 12 | MPEG-2-styled headers only | UnsupportedFormatError |
-| 13 | mixed bitrates | correct byBitRateKbps histogram, bitRateMode VBR |
-| 14 | trailing junk(50) after last frame | TRAILING_BYTES 50 |
+
+| ID  | Input                                     | Expect                                                       |
+| --- | ----------------------------------------- | ------------------------------------------------------------ |
+| 01  | 3 audio frames                            | frameCount 3, byKind.audio 3                                 |
+| 02  | sample bytes fed 1 byte per `update()`    | identical report to single-buffer parse (6090)               |
+| 03  | id3v2(500) + 5 frames                     | count 5, audioStartOffset 510, id3v2 reported                |
+| 04  | id3v2 with footer flag + frames           | footer's extra 10 bytes skipped                              |
+| 05  | junk(100) + 4 frames                      | count 4, RESYNC warning bytesSkipped 100                     |
+| 06  | 3 frames + valid header + half body (EOF) | count 4, TRUNCATED_FINAL_FRAME warning                       |
+| 07  | empty input                               | finalize throws UnsupportedFormatError                       |
+| 08  | 2 KB of PNG bytes                         | UnsupportedFormatError                                       |
+| 09  | 4 frames + id3v1()                        | count 4, id3v1.present true, no TRAILING_BYTES               |
+| 10  | xingFrame(declared 3) + 3 audio frames    | count 4, byKind {audio 3, vbrHeader 1}, declaredFrameCount 3 |
+| 11  | frames with junk between two of them      | correct count + RESYNC                                       |
+| 12  | MPEG-2-styled headers only                | UnsupportedFormatError                                       |
+| 13  | mixed bitrates                            | correct byBitRateKbps histogram, bitRateMode VBR             |
+| 14  | trailing junk(50) after last frame        | TRAILING_BYTES 50                                            |
 
 **Integration — API (`I-API`)**
-| ID | Request | Expect |
-|---|---|---|
-| 01 | POST /file-upload with sample.mp3 | 200, body exactly `{"frameCount":6090}`, correct content-type |
-| 02 | POST /file-upload, no file part | 400 NO_FILE |
-| 03 | POST /file-upload with PNG | 422 UNSUPPORTED_FORMAT |
-| 04 | upload exceeding a test-configured 1 MB cap | 413 FILE_TOO_LARGE |
-| 05 | GET /file-upload | 404/405 JSON envelope |
-| 06 | POST /analyze with sample.mp3 | 200; frameCount 6090; declaredFrameCount 6089; histogram per §2.6; durationSeconds 159.059 ±0.01; warnings [] |
-| 07 | GET /healthz | 200 `{"status":"ok"}` |
-| 08 | two file parts | 400 MULTIPLE_FILES |
+
+| ID  | Request                                     | Expect                                                                                                        |
+| --- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| 01  | POST /file-upload with sample.mp3           | 200, body exactly `{"frameCount":6090}`, correct content-type                                                 |
+| 02  | POST /file-upload, no file part             | 400 NO_FILE                                                                                                   |
+| 03  | POST /file-upload with PNG                  | 422 UNSUPPORTED_FORMAT                                                                                        |
+| 04  | upload exceeding a test-configured 1 MB cap | 413 FILE_TOO_LARGE                                                                                            |
+| 05  | GET /file-upload                            | 404/405 JSON envelope                                                                                         |
+| 06  | POST /analyze with sample.mp3               | 200; frameCount 6090; declaredFrameCount 6089; histogram per §2.6; durationSeconds 159.059 ±0.01; warnings [] |
+| 07  | GET /healthz                                | 200 `{"status":"ok"}`                                                                                         |
+| 08  | two file parts                              | 400 MULTIPLE_FILES                                                                                            |
 
 **Unit — narrative (`U-NAR`)**: given the sample's report JSON (checked-in snapshot), narrative
 contains the reconciliation sentence (6090 = 6089 + 1) and one section per §8.2; given a report
@@ -375,17 +394,17 @@ Frame count 6089; `curl -F "file=@sample.mp3" localhost:3000/file-upload` → 60
 
 Every test executed must be documented as **separate, human-readable Markdown documents** under
 `docs/evidence/`, committed to the repo, as proof the solution works against files of different
-sizes and shapes. These are *generated from real runs* (never hand-written claims): each doc
+sizes and shapes. These are _generated from real runs_ (never hand-written claims): each doc
 opens with the generation date, Node version, platform, and the exact command to regenerate it,
 followed by real captured output. `npm run evidence` regenerates all of them; regenerate at the
 submission commit.
 
-| Doc | Contents |
-|---|---|
-| `01-unit-and-integration-tests.md` | Full verbose test-runner output for every `U-HDR`/`U-PRS`/`U-NAR`/`I-API` case, with pass/fail counts and timings |
-| `02-file-matrix.md` | A table of files of different **sizes and shapes** run through the parser and the live HTTP endpoint — for each: description, size, expected vs actual frame count, warnings, parse time. Shapes minimum set: the provided sample (VBR + ID3v2.4 + Xing); synthetic CBR; synthetic VBR mixed-bitrate; ID3v2 with footer; junk-prefixed; mid-stream corruption; truncated final frame; ID3v1 trailer; empty file; PNG masquerading as .mp3; MPEG-2-only file |
-| `03-large-file-performance.md` | Streaming evidence: synthetic large MP3s (~100 MB committed-free, generated on demand; 1 GB optional flag) parsed from disk with measured duration, throughput, and peak RSS demonstrating O(1) memory |
-| `04-mediainfo-verification.md` | The mediainfo cross-check on the sample: exact commands, raw output, and the 6089 vs 6090 reconciliation |
+| Doc                                | Contents                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `01-unit-and-integration-tests.md` | Full verbose test-runner output for every `U-HDR`/`U-PRS`/`U-NAR`/`I-API` case, with pass/fail counts and timings                                                                                                                                                                                                                                                                                                                                           |
+| `02-file-matrix.md`                | A table of files of different **sizes and shapes** run through the parser and the live HTTP endpoint — for each: description, size, expected vs actual frame count, warnings, parse time. Shapes minimum set: the provided sample (VBR + ID3v2.4 + Xing); synthetic CBR; synthetic VBR mixed-bitrate; ID3v2 with footer; junk-prefixed; mid-stream corruption; truncated final frame; ID3v1 trailer; empty file; PNG masquerading as .mp3; MPEG-2-only file |
+| `03-large-file-performance.md`     | Streaming evidence: synthetic large MP3s (~100 MB committed-free, generated on demand; 1 GB optional flag) parsed from disk with measured duration, throughput, and peak RSS demonstrating O(1) memory                                                                                                                                                                                                                                                      |
+| `04-mediainfo-verification.md`     | The mediainfo cross-check on the sample: exact commands, raw output, and the 6089 vs 6090 reconciliation                                                                                                                                                                                                                                                                                                                                                    |
 
 Generation scripts live in `scripts/`; large generated fixtures live under
 `test/fixtures/generated/` (git-ignored).
@@ -561,6 +580,7 @@ via PR (even self-merged — the point is evidence of workflow). Tag the submiss
 ## 11. Acceptance criteria (Definition of Done)
 
 **Assignment rubric:**
+
 - [ ] `POST /file-upload` returns exactly `{"frameCount": 6090}` for the sample, correct JSON headers
 - [ ] Parser is hand-written; no MP3-parsing packages anywhere in the dependency tree
 - [ ] TypeScript strict throughout; lint/format/test tooling standardised; CI green
@@ -572,6 +592,7 @@ via PR (even self-merged — the point is evidence of workflow). Tag the submiss
       submission commit, covering files of different sizes and shapes
 
 **Above-and-beyond:**
+
 - [ ] `/analyze` matches §4.2 for the sample (histogram, declared 6089, duration 159.059)
 - [ ] Front-end renders all six sections of §8.2 for the sample; errors rendered helpfully
 - [ ] `cdk deploy --all` from a clean bootstrap succeeds; CloudFront URL serves the front-end
