@@ -1,5 +1,6 @@
 import { Buffer } from 'node:buffer';
 import { readFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 
 import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -34,7 +35,7 @@ describe('API integration (I-API)', () => {
   let app: FastifyInstance;
 
   beforeAll(async () => {
-    app = await buildApp({ maxUploadBytes: 500 * 1024 * 1024, serveStatic: false });
+    app = await buildApp({ maxUploadBytes: 500 * 1024 * 1024, staticRoot: false });
   });
   afterAll(async () => {
     await app.close();
@@ -98,7 +99,7 @@ describe('API integration (I-API)', () => {
   });
 
   it('04: an upload over the configured cap is 413 FILE_TOO_LARGE', async () => {
-    const capped = await buildApp({ maxUploadBytes: 1024 * 1024, serveStatic: false });
+    const capped = await buildApp({ maxUploadBytes: 1024 * 1024, staticRoot: false });
     try {
       const { payload, headers } = await multipartPayload([
         { bytes: junk(2 * 1024 * 1024), filename: 'big.mp3' },
@@ -162,7 +163,7 @@ describe('API integration (I-API)', () => {
   it('origin verification: rejects requests without the secret when configured', async () => {
     const guarded = await buildApp({
       maxUploadBytes: 1024,
-      serveStatic: false,
+      staticRoot: false,
       originVerifySecret: 's3cret',
     });
     try {
@@ -178,6 +179,25 @@ describe('API integration (I-API)', () => {
       expect(allowed.statusCode).toBe(404);
     } finally {
       await guarded.close();
+    }
+  });
+
+  it('regression: the error envelope survives static-serving registration', async () => {
+    // @fastify/static boots the instance when registered; routes bind the
+    // error handler that exists at that moment. Handlers registered too late
+    // silently fall back to Fastify's default serialization (raw 406s).
+    const withStatic = await buildApp({ maxUploadBytes: 1024, staticRoot: tmpdir() });
+    try {
+      const response = await withStatic.inject({
+        method: 'POST',
+        url: '/file-upload',
+        payload: '{}',
+        headers: { 'content-type': 'application/json' },
+      });
+      expect(response.statusCode).toBe(400);
+      expect(response.json()).toMatchObject({ error: { code: 'NO_FILE' } });
+    } finally {
+      await withStatic.close();
     }
   });
 });

@@ -233,8 +233,8 @@ async function multipartPayload(files: Array<{ bytes: Uint8Array; filename: stri
 }
 
 async function generateHttpChecks(): Promise<string> {
-  const app = await buildApp({ maxUploadBytes: 500 * 1024 * 1024, serveStatic: false });
-  const capped = await buildApp({ maxUploadBytes: 1024 * 1024, serveStatic: false });
+  const app = await buildApp({ maxUploadBytes: 500 * 1024 * 1024, staticRoot: false });
+  const capped = await buildApp({ maxUploadBytes: 1024 * 1024, staticRoot: false });
   const rows: string[] = [
     '| Request | Expected | Actual | Body (truncated) | Result |',
     '|---------|----------|--------|------------------|--------|',
