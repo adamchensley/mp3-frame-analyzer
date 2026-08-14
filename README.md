@@ -8,8 +8,13 @@ evidence, and a deployed, autoscaled, WAF-fronted AWS environment defined in CDK
 The MP3 frame parsing is **hand-written** (`src/parser/`) — no MP3-parsing packages are used
 anywhere in the dependency tree.
 
-- **Live demo:** `PUBLIC_URL_PLACEHOLDER`
+- **Live demo:** https://d108sd7zgbz3ji.cloudfront.net
 - **Assignment endpoint:** `POST /file-upload` → `{"frameCount": <number>}`
+
+```bash
+curl -F "file=@test/fixtures/sample.mp3" https://d108sd7zgbz3ji.cloudfront.net/file-upload
+# → {"frameCount":6090}
+```
 
 ![Analysis UI](docs/images/ui-overview.jpg)
 

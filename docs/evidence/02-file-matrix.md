@@ -1,12 +1,12 @@
 # File matrix — sizes and shapes
 
-> Generated 2026-08-14T19:09:36.876Z · Node v25.2.1 · darwin arm64 · regenerate with `npm run evidence` `-- --xl`
+> Generated 2026-08-14T19:35:52.526Z · Node v25.2.1 · darwin arm64 · regenerate with `npm run evidence` `-- --xl`
 
 Files of different sizes and shapes run through the streaming parser, each with a ground-truth expectation known by construction (synthetic files) or verified independently with mediainfo (the provided sample). Warnings are the parser’s integrity observations, surfaced to clients via `POST /analyze`.
 | # | Shape | Size | Expected | Actual | Warnings | Parse | Result |
 |---|-------|------|----------|--------|----------|-------|--------|
-| 1 | Provided sample — VBR, ID3v2.4 tag, Xing header | 1.4 MB | 6090 frames | 6090 frames | — | 3.3 ms | ✅ pass |
-| 2 | Synthetic CBR — 100 × 128 kbps frames, no tags | 40.7 KB | 100 frames | 100 frames | — | 1.3 ms | ✅ pass |
+| 1 | Provided sample — VBR, ID3v2.4 tag, Xing header | 1.4 MB | 6090 frames | 6090 frames | — | 4.0 ms | ✅ pass |
+| 2 | Synthetic CBR — 100 × 128 kbps frames, no tags | 40.7 KB | 100 frames | 100 frames | — | 0.1 ms | ✅ pass |
 | 3 | Synthetic VBR — Xing header + 200 mixed-bitrate frames | 112.3 KB | 201 frames | 201 frames | — | 0.1 ms | ✅ pass |
 | 4 | ID3v2 tag with footer flag + 50 frames | 20.7 KB | 50 frames | 50 frames | — | 0.1 ms | ✅ pass |
 | 5 | Junk-prefixed — 100 junk bytes before 40 frames | 16.4 KB | 40 frames | 40 frames | RESYNC | 0.1 ms | ✅ pass |

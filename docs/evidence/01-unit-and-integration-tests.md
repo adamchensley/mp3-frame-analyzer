@@ -1,6 +1,6 @@
 # Unit & integration test evidence
 
-> Generated 2026-08-14T19:09:36.869Z · Node v25.2.1 · darwin arm64 · regenerate with `npm run evidence` `-- --xl`
+> Generated 2026-08-14T19:35:52.518Z · Node v25.2.1 · darwin arm64 · regenerate with `npm run evidence` `-- --xl`
 
 Full verbose output of the automated suite (`vitest run --reporter=verbose`). Suites map to the spec: `U-HDR` frame-header decoding, `U-PRS` streaming parser shapes and edge cases, `U-NAR` front-end narrative, `I-API` HTTP contract and error matrix (docs/SPEC.md §6.2).
 ```text
@@ -41,12 +41,13 @@ RUN  v3.2.7 /Users/adamhensley/mp3Analyzer
  ✓ test/integration/api.test.ts > API integration (I-API) > 02b: a non-multipart request is NO_FILE 1ms
  ✓ test/integration/api.test.ts > API integration (I-API) > 03: a PNG upload is 422 UNSUPPORTED_FORMAT with a useful message 1ms
  ✓ test/integration/api.test.ts > API integration (I-API) > 03b: an empty file upload is 422 with an "empty" message 1ms
- ✓ test/integration/api.test.ts > API integration (I-API) > 04: an upload over the configured cap is 413 FILE_TOO_LARGE 42ms
+ ✓ test/integration/api.test.ts > API integration (I-API) > 04: an upload over the configured cap is 413 FILE_TOO_LARGE 45ms
  ✓ test/integration/api.test.ts > API integration (I-API) > 05: unknown routes and wrong methods get the JSON error envelope 1ms
  ✓ test/integration/api.test.ts > API integration (I-API) > 06: /analyze returns the full report for the sample 3ms
  ✓ test/integration/api.test.ts > API integration (I-API) > 07: /healthz responds ok 0ms
  ✓ test/integration/api.test.ts > API integration (I-API) > 08: two file parts is 400 MULTIPLE_FILES 1ms
  ✓ test/integration/api.test.ts > API integration (I-API) > origin verification: rejects requests without the secret when configured 2ms
+ ✓ test/integration/api.test.ts > API integration (I-API) > regression: the error envelope survives static-serving registration 2ms
  ✓ test/unit/mp3-frame-counter.test.ts > Mp3FrameCounter (U-PRS) > 01: counts a simple run of audio frames 1ms
  ✓ test/unit/mp3-frame-counter.test.ts > Mp3FrameCounter (U-PRS) > 03: skips a leading ID3v2 tag and reports it 0ms
  ✓ test/unit/mp3-frame-counter.test.ts > Mp3FrameCounter (U-PRS) > 04: honours the ID3v2 footer flag (10 extra bytes) 0ms
@@ -64,10 +65,10 @@ RUN  v3.2.7 /Users/adamhensley/mp3Analyzer
  ✓ test/unit/mp3-frame-counter.test.ts > Mp3FrameCounter (U-PRS) > counts padded and CRC-protected frames 0ms
  ✓ test/unit/mp3-frame-counter.test.ts > Mp3FrameCounter (U-PRS) > guards against use after finalize() 0ms
  ✓ test/unit/mp3-frame-counter.test.ts > Mp3FrameCounter against the provided sample (ground truth) > whole-buffer parse matches ground truth (6090 physical frames) 3ms
- ✓ test/unit/mp3-frame-counter.test.ts > Mp3FrameCounter against the provided sample (ground truth) > 02: is chunk-boundary independent (1-byte and odd-sized chunks) 260ms
+ ✓ test/unit/mp3-frame-counter.test.ts > Mp3FrameCounter against the provided sample (ground truth) > 02: is chunk-boundary independent (1-byte and odd-sized chunks) 265ms
 
  Test Files  4 passed (4)
-      Tests  59 passed (59)
-   Start at  15:09:36
-   Duration  446ms (transform 86ms, setup 0ms, collect 172ms, tests 397ms, environment 0ms, prepare 122ms)
+      Tests  60 passed (60)
+   Start at  15:35:51
+   Duration  457ms (transform 80ms, setup 0ms, collect 172ms, tests 425ms, environment 0ms, prepare 128ms)
 ```

@@ -1,6 +1,6 @@
 # mediainfo cross-verification
 
-> Generated 2026-08-14T19:09:37.698Z · Node v25.2.1 · darwin arm64 · regenerate with `npm run evidence` `-- --xl`
+> Generated 2026-08-14T19:35:53.396Z · Node v25.2.1 · darwin arm64 · regenerate with `npm run evidence` `-- --xl`
 
 The assignment suggests verifying results with mediainfo. This document records that verification for the provided sample and explains the expected off-by-one between the two tools.
 ## mediainfo (full parse)
