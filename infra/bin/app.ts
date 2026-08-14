@@ -19,8 +19,7 @@ const env = {
 const imageTag = (app.node.tryGetContext('imageTag') as string | undefined) || 'latest';
 const alertEmail = (app.node.tryGetContext('alertEmail') as string | undefined) || undefined;
 const githubRepo =
-  (app.node.tryGetContext('githubRepo') as string | undefined) ||
-  'adamchensley/mp3-frame-analyzer';
+  (app.node.tryGetContext('githubRepo') as string | undefined) || 'adamchensley/mp3-frame-analyzer';
 
 const network = new NetworkStack(app, 'Mp3AnalyzerNetworkStack', { env });
 const repository = new RepositoryStack(app, 'Mp3AnalyzerRepositoryStack', { env });
