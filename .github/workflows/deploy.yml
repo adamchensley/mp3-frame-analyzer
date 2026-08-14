@@ -1,0 +1,65 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency: deploy-production
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: mp3-frame-analyzer
+
+permissions:
+  id-token: write # OIDC — no long-lived AWS keys anywhere
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # Requires repo variables: AWS_ACCOUNT_ID, AWS_DEPLOY_ROLE_ARN (from CiCdStack)
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm --prefix web ci
+      - run: npm run lint && npm run typecheck && npm test
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        run: |
+          aws ecr get-login-password --region "$AWS_REGION" \
+            | docker login --username AWS --password-stdin \
+              "${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.$AWS_REGION.amazonaws.com"
+
+      - name: Build and push image
+        run: |
+          IMAGE="${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:${{ github.sha }}"
+          docker build -t "$IMAGE" .
+          docker push "$IMAGE"
+
+      - name: CDK deploy
+        working-directory: infra
+        run: |
+          npm ci
+          npx cdk deploy --all --require-approval never -c imageTag=${{ github.sha }}
+
+      - name: Smoke test via CloudFront
+        run: |
+          DOMAIN=$(aws cloudformation describe-stacks --stack-name Mp3AnalyzerEdgeStack \
+            --query "Stacks[0].Outputs[?OutputKey=='DistributionDomain'].OutputValue" --output text)
+          echo "smoke testing https://$DOMAIN"
+          curl -sf "https://$DOMAIN/healthz" | grep -q '"ok"'
+          RESULT=$(curl -sf -F "file=@test/fixtures/sample.mp3" "https://$DOMAIN/file-upload")
+          echo "$RESULT"
+          test "$RESULT" = '{"frameCount":6090}'
+          curl -sf -F "file=@test/fixtures/sample.mp3" "https://$DOMAIN/analyze" \
+            | grep -q '"declaredFrameCount":6089'

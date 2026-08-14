@@ -1,0 +1,19 @@
+{
+  "name": "mp3-frame-analyzer-infra",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "synth": "cdk synth",
+    "deploy": "cdk deploy --all",
+    "destroy": "cdk destroy --all"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.190.0",
+    "constructs": "^10.4.2"
+  },
+  "devDependencies": {
+    "aws-cdk": "^2.1016.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.0"
+  }
+}

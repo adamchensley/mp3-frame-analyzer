@@ -12,5 +12,8 @@
     "noEmit": true,
     "types": ["vite/client"]
   },
-  "include": ["src"]
+  "include": ["src"],
+  // Tests are typechecked and executed by the root Vitest suite, which owns
+  // the vitest dependency; the web build image doesn't install it.
+  "exclude": ["src/**/*.test.ts"]
 }

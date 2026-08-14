@@ -1,0 +1,13 @@
+node_modules
+web/node_modules
+web/dist
+dist
+infra
+docs
+test
+scripts
+coverage
+.git
+.github
+*.md
+sample (2).mp3
