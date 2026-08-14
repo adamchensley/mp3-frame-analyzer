@@ -1,0 +1,12 @@
+node_modules/
+dist/
+web/dist/
+coverage/
+infra/cdk.out/
+test/fixtures/generated/
+*.tsbuildinfo
+.DS_Store
+npm-debug.log*
+
+# original upload kept out of the repo; the committed copy lives at test/fixtures/sample.mp3
+/sample (2).mp3
