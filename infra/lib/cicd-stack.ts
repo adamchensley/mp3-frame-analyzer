@@ -7,6 +7,14 @@ export interface CiCdStackProps extends cdk.StackProps {
   repository: ecr.Repository;
   /** "owner/repo", pass with -c githubRepo=owner/repo. */
   githubRepo: string;
+  /**
+   * Exact ID-qualified OIDC subject GitHub now issues, e.g.
+   * "repo:owner@1234/repo@5678:ref:refs/heads/main". Look it up with
+   * `gh api repos/<owner>/<repo>/actions/oidc/customization/sub`
+   * (`sub_claim_prefix`). The trust accepts this OR the classic
+   * name-based subject, so either token format can assume the role.
+   */
+  githubIdQualifiedSubject?: string;
 }
 
 /**
@@ -27,7 +35,11 @@ export class CiCdStack extends cdk.Stack {
       assumedBy: new iam.WebIdentityPrincipal(provider.openIdConnectProviderArn, {
         StringEquals: {
           'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com',
-          'token.actions.githubusercontent.com:sub': `repo:${props.githubRepo}:ref:refs/heads/main`,
+          // Array = OR: exact match on either subject format, main branch only.
+          'token.actions.githubusercontent.com:sub': [
+            `repo:${props.githubRepo}:ref:refs/heads/main`,
+            ...(props.githubIdQualifiedSubject ? [props.githubIdQualifiedSubject] : []),
+          ],
         },
       }),
       description: 'GitHub Actions deploy role for mp3-frame-analyzer',

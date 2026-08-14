@@ -42,4 +42,8 @@ new CiCdStack(app, 'Mp3AnalyzerCiCdStack', {
   env,
   repository: repository.repository,
   githubRepo,
+  githubIdQualifiedSubject:
+    (app.node.tryGetContext('githubIdQualifiedSubject') as string | undefined) ||
+    // From `gh api repos/adamchensley/mp3-frame-analyzer/actions/oidc/customization/sub`:
+    'repo:adamchensley@5420402/mp3-frame-analyzer@1334552412:ref:refs/heads/main',
 });
