@@ -17,8 +17,11 @@ permissions:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
-    # Requires repo variables: AWS_ACCOUNT_ID, AWS_DEPLOY_ROLE_ARN (from CiCdStack)
+    # arm64 runner (free for public repos): the Fargate tasks are ARM64, so the
+    # image must be built for linux/arm64 — natively here, no QEMU emulation.
+    runs-on: ubuntu-24.04-arm
+    # Requires repo variables: AWS_ACCOUNT_ID, AWS_DEPLOY_ROLE_ARN (from CiCdStack);
+    # optional: ALERT_EMAIL for CloudWatch alarm notifications.
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -50,7 +53,10 @@ jobs:
         working-directory: infra
         run: |
           npm ci
-          npx cdk deploy --all --require-approval never -c imageTag=${{ github.sha }}
+          npx cdk deploy --all --require-approval never \
+            -c imageTag=${{ github.sha }} \
+            -c githubRepo=${{ github.repository }} \
+            -c alertEmail=${{ vars.ALERT_EMAIL }}
 
       - name: Smoke test via CloudFront
         run: |
