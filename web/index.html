@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MP3 Frame Analyzer</title>
+    <meta
+      name="description"
+      content="Upload an MP3 and get a frame-level analysis: physical frame count, VBR header reconciliation, bitrate distribution, and stream integrity."
+    />
+  </head>
+  <body>
+    <header class="site-header">
+      <h1>MP3 Frame Analyzer</h1>
+      <p class="tagline">
+        Counts every physical MPEG-1 Layer III frame in your file — and tells you the whole story.
+      </p>
+    </header>
+
+    <main>
+      <section class="uploader" aria-labelledby="uploader-heading">
+        <h2 id="uploader-heading" class="visually-hidden">Upload</h2>
+        <label id="drop-zone" class="drop-zone" for="file-input">
+          <span class="drop-title">Drop an MP3 here, or click to choose a file</span>
+          <span class="drop-hint">The file is analyzed in a single stream and never stored.</span>
+          <input id="file-input" type="file" accept=".mp3,audio/mpeg" />
+        </label>
+        <p id="status" class="status" role="status" aria-live="polite"></p>
+      </section>
+
+      <section id="results" hidden aria-labelledby="results-heading">
+        <h2 id="results-heading" class="visually-hidden">Analysis results</h2>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>
+        The strict assignment endpoint is also live:
+        <code>curl -F "file=@your.mp3" /file-upload</code> →
+        <code>{"frameCount": &lt;number&gt;}</code>
+      </p>
+    </footer>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
