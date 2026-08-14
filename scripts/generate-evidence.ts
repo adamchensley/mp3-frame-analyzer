@@ -85,7 +85,11 @@ interface MatrixCase {
   expectedWarnings?: string[];
 }
 
-function parseBytes(bytes: Uint8Array): { report?: AnalysisReport; error?: Mp3ParseError; ms: number } {
+function parseBytes(bytes: Uint8Array): {
+  report?: AnalysisReport;
+  error?: Mp3ParseError;
+  ms: number;
+} {
   const counter = new Mp3FrameCounter();
   const started = process.hrtime.bigint();
   try {
@@ -107,30 +111,73 @@ function elapsedMs(started: bigint): number {
 function generateFileMatrix(): string {
   const halfFrame = frame().subarray(0, Math.floor(frame().length / 2));
   const cases: MatrixCase[] = [
-    { shape: 'Provided sample — VBR, ID3v2.4 tag, Xing header', bytes: sampleBytes, expected: 6090 },
-    { shape: 'Synthetic CBR — 100 × 128 kbps frames, no tags', bytes: concat(...Array.from({ length: 100 }, () => frame())), expected: 100 },
+    {
+      shape: 'Provided sample — VBR, ID3v2.4 tag, Xing header',
+      bytes: sampleBytes,
+      expected: 6090,
+    },
+    {
+      shape: 'Synthetic CBR — 100 × 128 kbps frames, no tags',
+      bytes: concat(...Array.from({ length: 100 }, () => frame())),
+      expected: 100,
+    },
     {
       shape: 'Synthetic VBR — Xing header + 200 mixed-bitrate frames',
       bytes: concat(
         xingFrame({ declaredFrames: 200, declaredBytes: 0 }),
-        ...Array.from({ length: 200 }, (_, i) => frame({ bitrateKbps: [64, 128, 192, 320][i % 4] ?? 128 })),
+        ...Array.from({ length: 200 }, (_, i) =>
+          frame({ bitrateKbps: [64, 128, 192, 320][i % 4] ?? 128 }),
+        ),
       ),
       expected: 201,
     },
-    { shape: 'ID3v2 tag with footer flag + 50 frames', bytes: concat(id3v2(300, { footer: true }), ...Array.from({ length: 50 }, () => frame())), expected: 50 },
-    { shape: 'Junk-prefixed — 100 junk bytes before 40 frames', bytes: concat(junk(100), ...Array.from({ length: 40 }, () => frame())), expected: 40, expectedWarnings: ['RESYNC'] },
+    {
+      shape: 'ID3v2 tag with footer flag + 50 frames',
+      bytes: concat(id3v2(300, { footer: true }), ...Array.from({ length: 50 }, () => frame())),
+      expected: 50,
+    },
+    {
+      shape: 'Junk-prefixed — 100 junk bytes before 40 frames',
+      bytes: concat(junk(100), ...Array.from({ length: 40 }, () => frame())),
+      expected: 40,
+      expectedWarnings: ['RESYNC'],
+    },
     {
       shape: 'Mid-stream corruption — 30 frames, 37 junk bytes, 30 frames',
-      bytes: concat(...Array.from({ length: 30 }, () => frame()), junk(37), ...Array.from({ length: 30 }, () => frame())),
+      bytes: concat(
+        ...Array.from({ length: 30 }, () => frame()),
+        junk(37),
+        ...Array.from({ length: 30 }, () => frame()),
+      ),
       expected: 60,
       expectedWarnings: ['RESYNC'],
     },
-    { shape: 'Truncated final frame — 10 full + half a frame', bytes: concat(...Array.from({ length: 10 }, () => frame()), halfFrame), expected: 11, expectedWarnings: ['TRUNCATED_FINAL_FRAME'] },
-    { shape: 'ID3v1 trailer — 25 frames + 128-byte TAG block', bytes: concat(...Array.from({ length: 25 }, () => frame()), id3v1()), expected: 25 },
-    { shape: 'Padding + CRC mix — 20 padded / 20 CRC-protected frames', bytes: concat(...Array.from({ length: 20 }, () => frame({ padding: true })), ...Array.from({ length: 20 }, () => frame({ crc: true }))), expected: 40 },
+    {
+      shape: 'Truncated final frame — 10 full + half a frame',
+      bytes: concat(...Array.from({ length: 10 }, () => frame()), halfFrame),
+      expected: 11,
+      expectedWarnings: ['TRUNCATED_FINAL_FRAME'],
+    },
+    {
+      shape: 'ID3v1 trailer — 25 frames + 128-byte TAG block',
+      bytes: concat(...Array.from({ length: 25 }, () => frame()), id3v1()),
+      expected: 25,
+    },
+    {
+      shape: 'Padding + CRC mix — 20 padded / 20 CRC-protected frames',
+      bytes: concat(
+        ...Array.from({ length: 20 }, () => frame({ padding: true })),
+        ...Array.from({ length: 20 }, () => frame({ crc: true })),
+      ),
+      expected: 40,
+    },
     { shape: 'Empty file (0 bytes)', bytes: new Uint8Array(0), expected: 'UNSUPPORTED_FORMAT' },
     { shape: 'PNG bytes masquerading as .mp3', bytes: pngBytes(), expected: 'UNSUPPORTED_FORMAT' },
-    { shape: 'MPEG-2-style headers only (out of scope by spec)', bytes: concat(mpeg2StyleBlock(), mpeg2StyleBlock(), mpeg2StyleBlock()), expected: 'UNSUPPORTED_FORMAT' },
+    {
+      shape: 'MPEG-2-style headers only (out of scope by spec)',
+      bytes: concat(mpeg2StyleBlock(), mpeg2StyleBlock(), mpeg2StyleBlock()),
+      expected: 'UNSUPPORTED_FORMAT',
+    },
   ];
 
   const rows: string[] = [
@@ -145,7 +192,8 @@ function generateFileMatrix(): string {
     const expected = typeof c.expected === 'number' ? `${c.expected} frames` : c.expected;
     const countOk = report ? report.frameCount === c.expected : error?.code === c.expected;
     const warningsOk =
-      !c.expectedWarnings || c.expectedWarnings.every((w) => report?.warnings.some((x) => x.code === w));
+      !c.expectedWarnings ||
+      c.expectedWarnings.every((w) => report?.warnings.some((x) => x.code === w));
     const ok = countOk && warningsOk;
     if (!ok) failures += 1;
     rows.push(
@@ -201,7 +249,9 @@ async function generateHttpChecks(): Promise<string> {
         label: 'POST /file-upload with sample.mp3',
         expectStatus: 200,
         run: async () => {
-          const { payload, headers } = await multipartPayload([{ bytes: sampleBytes, filename: 'sample.mp3' }]);
+          const { payload, headers } = await multipartPayload([
+            { bytes: sampleBytes, filename: 'sample.mp3' },
+          ]);
           return app.inject({ method: 'POST', url: '/file-upload', payload, headers });
         },
       },
@@ -209,7 +259,9 @@ async function generateHttpChecks(): Promise<string> {
         label: 'POST /analyze with sample.mp3',
         expectStatus: 200,
         run: async () => {
-          const { payload, headers } = await multipartPayload([{ bytes: sampleBytes, filename: 'sample.mp3' }]);
+          const { payload, headers } = await multipartPayload([
+            { bytes: sampleBytes, filename: 'sample.mp3' },
+          ]);
           return app.inject({ method: 'POST', url: '/analyze', payload, headers });
         },
       },
@@ -217,20 +269,30 @@ async function generateHttpChecks(): Promise<string> {
         label: 'POST /file-upload with a PNG',
         expectStatus: 422,
         run: async () => {
-          const { payload, headers } = await multipartPayload([{ bytes: pngBytes(), filename: 'img.mp3' }]);
+          const { payload, headers } = await multipartPayload([
+            { bytes: pngBytes(), filename: 'img.mp3' },
+          ]);
           return app.inject({ method: 'POST', url: '/file-upload', payload, headers });
         },
       },
       {
         label: 'POST /file-upload without a file part',
         expectStatus: 400,
-        run: async () => app.inject({ method: 'POST', url: '/file-upload', payload: '{}', headers: { 'content-type': 'application/json' } }),
+        run: async () =>
+          app.inject({
+            method: 'POST',
+            url: '/file-upload',
+            payload: '{}',
+            headers: { 'content-type': 'application/json' },
+          }),
       },
       {
         label: 'POST /file-upload 2 MB junk vs 1 MB cap',
         expectStatus: 413,
         run: async () => {
-          const { payload, headers } = await multipartPayload([{ bytes: junk(2 * 1024 * 1024), filename: 'big.mp3' }]);
+          const { payload, headers } = await multipartPayload([
+            { bytes: junk(2 * 1024 * 1024), filename: 'big.mp3' },
+          ]);
           return capped.inject({ method: 'POST', url: '/file-upload', payload, headers });
         },
       },
@@ -309,10 +371,7 @@ async function generatePerformanceReport(): Promise<string> {
     { label: 'Provided sample (VBR)', filePath: SAMPLE_PATH, expectedFrames: 6090 },
   ];
   for (const mb of XL ? [10, 100, 1024] : [10, 100]) {
-    const fixture = await generateLargeCbrFixture(
-      path.join(GENERATED_DIR, `cbr-${mb}mb.mp3`),
-      mb,
-    );
+    const fixture = await generateLargeCbrFixture(path.join(GENERATED_DIR, `cbr-${mb}mb.mp3`), mb);
     targets.push({
       label: `Synthetic CBR ${mb >= 1024 ? '1 GB' : `${mb} MB`} (320 kbps)`,
       filePath: fixture.filePath,
@@ -359,12 +418,18 @@ async function generatePerformanceReport(): Promise<string> {
 function generateMediainfoReport(): string {
   const full = runMediainfo(['--ParseSpeed=1', '-f', SAMPLE_PATH]);
   const relevant = full
-    ? [...new Set(
-        full
-          .split('\n')
-          .filter((line) => /^(Frame count|Samples count|Duration|Bit rate mode|Format |Overall bit rate)/.test(line.trim()))
-          .map((line) => line.trim()),
-      )].join('\n')
+    ? [
+        ...new Set(
+          full
+            .split('\n')
+            .filter((line) =>
+              /^(Frame count|Samples count|Duration|Bit rate mode|Format |Overall bit rate)/.test(
+                line.trim(),
+              ),
+            )
+            .map((line) => line.trim()),
+        ),
+      ].join('\n')
     : null;
 
   const { report } = parseBytes(sampleBytes);
@@ -429,7 +494,10 @@ writeFileSync(
 );
 
 console.log('3/4 running large-file streaming runs…');
-writeFileSync(path.join(EVIDENCE_DIR, '03-large-file-performance.md'), await generatePerformanceReport());
+writeFileSync(
+  path.join(EVIDENCE_DIR, '03-large-file-performance.md'),
+  await generatePerformanceReport(),
+);
 
 console.log('4/4 running mediainfo cross-verification…');
 writeFileSync(path.join(EVIDENCE_DIR, '04-mediainfo-verification.md'), generateMediainfoReport());

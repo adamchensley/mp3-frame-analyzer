@@ -87,7 +87,12 @@ describe('Mp3FrameCounter (U-PRS)', () => {
   });
 
   it('10: detects a Xing header frame and classifies it separately', () => {
-    const bytes = concat(xingFrame({ declaredFrames: 3, declaredBytes: 999, quality: 78 }), frame(), frame(), frame());
+    const bytes = concat(
+      xingFrame({ declaredFrames: 3, declaredBytes: 999, quality: 78 }),
+      frame(),
+      frame(),
+      frame(),
+    );
     const report = parseAll(bytes);
     expect(report.frameCount).toBe(4);
     expect(report.frames.byKind).toEqual({ audio: 3, vbrHeader: 1 });
@@ -102,7 +107,9 @@ describe('Mp3FrameCounter (U-PRS)', () => {
   });
 
   it('10b: detects an Info header (CBR) the same way', () => {
-    const report = parseAll(concat(xingFrame({ declaredFrames: 2, tag: 'Info' }), frame(), frame()));
+    const report = parseAll(
+      concat(xingFrame({ declaredFrames: 2, tag: 'Info' }), frame(), frame()),
+    );
     expect(report.vbrHeader.kind).toBe('Info');
     expect(report.frames.byKind).toEqual({ audio: 2, vbrHeader: 1 });
   });
@@ -110,7 +117,9 @@ describe('Mp3FrameCounter (U-PRS)', () => {
   it('11: resyncs over junk between frames', () => {
     const report = parseAll(concat(frame(), junk(37), frame(), frame()));
     expect(report.frameCount).toBe(3);
-    expect(report.warnings).toEqual([expect.objectContaining({ code: 'RESYNC', bytesSkipped: 37 })]);
+    expect(report.warnings).toEqual([
+      expect.objectContaining({ code: 'RESYNC', bytesSkipped: 37 }),
+    ]);
   });
 
   it('12: a file with only MPEG-2-style blocks is unsupported', () => {

@@ -37,7 +37,8 @@ export function tryParseFrameHeader(
   const padding = ((b2 >> 1) & 1) === 1;
   const crcProtected = (b1 & 1) === 0;
   const channelMode = CHANNEL_MODES[(b3 >> 6) & 0b11] ?? 'stereo';
-  const frameLengthBytes = Math.floor((144 * bitrateKbps * 1000) / sampleRateHz) + (padding ? 1 : 0);
+  const frameLengthBytes =
+    Math.floor((144 * bitrateKbps * 1000) / sampleRateHz) + (padding ? 1 : 0);
 
   return { bitrateKbps, sampleRateHz, padding, crcProtected, channelMode, frameLengthBytes };
 }

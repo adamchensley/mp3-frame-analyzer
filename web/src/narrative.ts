@@ -43,9 +43,7 @@ export function buildNarrative(report: UploadAnalysis): string[] {
         `wrote into a structurally valid frame.${declared}`,
     );
   } else {
-    paragraphs.push(
-      'No Xing/Info/VBRI header was found — every frame in this file carries audio.',
-    );
+    paragraphs.push('No Xing/Info/VBRI header was found — every frame in this file carries audio.');
   }
 
   if (frames.byKind.vbrHeader > 0) {

@@ -69,7 +69,10 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
 
   app.setNotFoundHandler((request, reply) => {
     void reply.status(404).send({
-      error: { code: 'NOT_FOUND', message: `Route ${request.method} ${request.url} was not found.` },
+      error: {
+        code: 'NOT_FOUND',
+        message: `Route ${request.method} ${request.url} was not found.`,
+      },
     });
   });
 

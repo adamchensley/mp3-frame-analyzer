@@ -61,5 +61,9 @@ export function toAppError(error: unknown): AppError {
     const translate = MULTIPART_ERROR_MAP[String(error.code)];
     if (translate) return translate();
   }
-  return new AppError(500, 'INTERNAL', 'An unexpected error occurred while processing the request.');
+  return new AppError(
+    500,
+    'INTERNAL',
+    'An unexpected error occurred while processing the request.',
+  );
 }

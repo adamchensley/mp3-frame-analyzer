@@ -37,7 +37,10 @@ export class ServiceStack extends cdk.Stack {
       generateSecretString: { excludePunctuation: true, passwordLength: 48 },
     });
 
-    const cluster = new ecs.Cluster(this, 'Cluster', { vpc, containerInsightsV2: ecs.ContainerInsights.ENABLED });
+    const cluster = new ecs.Cluster(this, 'Cluster', {
+      vpc,
+      containerInsightsV2: ecs.ContainerInsights.ENABLED,
+    });
 
     const taskDefinition = new ecs.FargateTaskDefinition(this, 'TaskDefinition', {
       cpu: 512,

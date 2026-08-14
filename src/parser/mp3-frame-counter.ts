@@ -1,7 +1,12 @@
 import { Buffer } from 'node:buffer';
 
 import { FRAME_HEADER_BYTES, SAMPLES_PER_FRAME, tryParseFrameHeader } from './frame-header.js';
-import { ID3V1_TAG_BYTES, ID3V2_HEADER_BYTES, startsWithId3v1Tag, tryParseId3v2Header } from './id3.js';
+import {
+  ID3V1_TAG_BYTES,
+  ID3V2_HEADER_BYTES,
+  startsWithId3v1Tag,
+  tryParseId3v2Header,
+} from './id3.js';
 import { Mp3ParseError } from './types.js';
 import type {
   AnalysisReport,
@@ -316,7 +321,11 @@ export class Mp3FrameCounter {
       },
       tags: {
         id3v2: this.id3v2
-          ? { present: true, version: this.id3v2.version, totalSizeBytes: this.id3v2.totalSizeBytes }
+          ? {
+              present: true,
+              version: this.id3v2.version,
+              totalSizeBytes: this.id3v2.totalSizeBytes,
+            }
           : { present: false, version: null, totalSizeBytes: null },
         id3v1: { present: id3v1Present },
       },

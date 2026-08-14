@@ -82,7 +82,10 @@ describe('buildNarrative (U-NAR)', () => {
         qualityIndicator: null,
       },
       frames: { ...sampleReport.frames, byKind: { audio: 6090, vbrHeader: 0 } },
-      tags: { id3v2: { present: false, version: null, totalSizeBytes: null }, id3v1: { present: true } },
+      tags: {
+        id3v2: { present: false, version: null, totalSizeBytes: null },
+        id3v1: { present: true },
+      },
       layout: { ...sampleReport.layout, audioStartOffset: 0 },
       warnings: [{ code: 'TRAILING_BYTES', message: 'junk', bytesSkipped: 12 }],
     };

@@ -254,9 +254,6 @@ function th(text: string): HTMLElement {
 
 /** Escape HTML, then translate the narrative's `**bold**` spans. */
 function renderBold(text: string): string {
-  const escaped = text
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;');
+  const escaped = text.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
   return escaped.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
 }

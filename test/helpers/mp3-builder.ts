@@ -112,7 +112,10 @@ export function xingFrame(options: XingFrameOptions = {}): Buffer {
 }
 
 /** An ID3v2 tag: 10-byte header + zero-filled body (+ footer when flagged). */
-export function id3v2(bodySize: number, options: { footer?: boolean; version?: number } = {}): Buffer {
+export function id3v2(
+  bodySize: number,
+  options: { footer?: boolean; version?: number } = {},
+): Buffer {
   const { footer = false, version = 4 } = options;
   const buffer = Buffer.alloc(10 + bodySize + (footer ? 10 : 0));
   buffer.write('ID3', 0, 'ascii');

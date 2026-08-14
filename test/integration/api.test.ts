@@ -21,11 +21,7 @@ async function multipartPayload(files: FilePart[], fields: Record<string, string
   const form = new FormData();
   for (const [name, value] of Object.entries(fields)) form.append(name, value);
   for (const file of files) {
-    form.append(
-      file.field ?? 'file',
-      new Blob([file.bytes]),
-      file.filename ?? 'upload.mp3',
-    );
+    form.append(file.field ?? 'file', new Blob([file.bytes]), file.filename ?? 'upload.mp3');
   }
   const encoded = new Response(form);
   return {
@@ -107,7 +103,12 @@ describe('API integration (I-API)', () => {
       const { payload, headers } = await multipartPayload([
         { bytes: junk(2 * 1024 * 1024), filename: 'big.mp3' },
       ]);
-      const response = await capped.inject({ method: 'POST', url: '/file-upload', payload, headers });
+      const response = await capped.inject({
+        method: 'POST',
+        url: '/file-upload',
+        payload,
+        headers,
+      });
       expect(response.statusCode).toBe(413);
       expect(response.json()).toMatchObject({ error: { code: 'FILE_TOO_LARGE' } });
     } finally {

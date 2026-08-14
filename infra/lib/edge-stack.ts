@@ -34,9 +34,7 @@ export class EdgeStack extends cdk.Stack {
               name: 'AWSManagedRulesCommonRuleSet',
               // Load-bearing: SizeRestrictions_BODY blocks bodies > 8 KB and
               // would reject every real MP3 upload. Count instead of block.
-              ruleActionOverrides: [
-                { name: 'SizeRestrictions_BODY', actionToUse: { count: {} } },
-              ],
+              ruleActionOverrides: [{ name: 'SizeRestrictions_BODY', actionToUse: { count: {} } }],
             },
           },
           visibilityConfig: {
@@ -133,6 +131,8 @@ export class EdgeStack extends cdk.Stack {
     });
 
     new cdk.CfnOutput(this, 'DistributionDomain', { value: distribution.distributionDomainName });
-    new cdk.CfnOutput(this, 'PublicUrl', { value: `https://${distribution.distributionDomainName}` });
+    new cdk.CfnOutput(this, 'PublicUrl', {
+      value: `https://${distribution.distributionDomainName}`,
+    });
   }
 }
