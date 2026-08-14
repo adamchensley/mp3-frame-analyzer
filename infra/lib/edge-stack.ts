@@ -32,9 +32,17 @@ export class EdgeStack extends cdk.Stack {
             managedRuleGroupStatement: {
               vendorName: 'AWS',
               name: 'AWSManagedRulesCommonRuleSet',
-              // Load-bearing: SizeRestrictions_BODY blocks bodies > 8 KB and
-              // would reject every real MP3 upload. Count instead of block.
-              ruleActionOverrides: [{ name: 'SizeRestrictions_BODY', actionToUse: { count: {} } }],
+              // Load-bearing: the body-inspection rules reject legitimate MP3
+              // uploads. SizeRestrictions_BODY blocks any body > 8 KB, and the
+              // XSS/LFI/RFI body matchers false-positive on arbitrary binary
+              // audio bytes (observed live: CrossSiteScripting_BODY blocked the
+              // sample file). Count them; header/URI protections stay active.
+              ruleActionOverrides: [
+                { name: 'SizeRestrictions_BODY', actionToUse: { count: {} } },
+                { name: 'CrossSiteScripting_BODY', actionToUse: { count: {} } },
+                { name: 'GenericLFI_BODY', actionToUse: { count: {} } },
+                { name: 'GenericRFI_BODY', actionToUse: { count: {} } },
+              ],
             },
           },
           visibilityConfig: {
@@ -51,6 +59,12 @@ export class EdgeStack extends cdk.Stack {
             managedRuleGroupStatement: {
               vendorName: 'AWS',
               name: 'AWSManagedRulesKnownBadInputsRuleSet',
+              // Same binary-body false-positive class as above: random audio
+              // bytes can match payload signatures. Body variants to Count.
+              ruleActionOverrides: [
+                { name: 'JavaDeserializationRCE_BODY', actionToUse: { count: {} } },
+                { name: 'Log4JRCE_BODY', actionToUse: { count: {} } },
+              ],
             },
           },
           visibilityConfig: {
