@@ -195,9 +195,9 @@ any size straight into the same container we built in Part 1 — one codebase, n
 
 ### 3.4 AWS account hygiene
 
-**Out of scope** for this phase per project decision 2026-08-14 (originally flagged: CLI
-authenticated as root, no default region). Deployment proceeds with existing credentials in
-`us-east-1`; account maintenance (MFA, identity setup, etc.) is deferred.
+**Out of scope** for this phase per project decision 2026-08-14. Deployment targets
+`us-east-1`; broader account credential and identity setup is handled separately from
+this project.
 
 ---
 

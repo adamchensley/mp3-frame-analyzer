@@ -21,7 +21,8 @@ jobs:
     # image must be built for linux/arm64 — natively here, no QEMU emulation.
     runs-on: ubuntu-24.04-arm
     # Requires repo variables: AWS_ACCOUNT_ID, AWS_DEPLOY_ROLE_ARN (from CiCdStack);
-    # optional: ALERT_EMAIL for CloudWatch alarm notifications.
+    # optional repo *secret* ALERT_EMAIL for CloudWatch alarm notifications —
+    # a secret (not a variable) so GitHub masks it in public workflow logs.
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -56,7 +57,7 @@ jobs:
           npx cdk deploy --all --require-approval never \
             -c imageTag=${{ github.sha }} \
             -c githubRepo=${{ github.repository }} \
-            -c alertEmail=${{ vars.ALERT_EMAIL }}
+            -c alertEmail=${{ secrets.ALERT_EMAIL }}
 
       - name: Smoke test via CloudFront
         run: |
